@@ -15,6 +15,8 @@ const MovieGallery = ({ searchQuery, viewMode }) => {
   const [brokenImages, setBrokenImages] = useState({});
 
   const API_KEY = import.meta.env.VITE_OMDB_API_KEY;
+  const STRIVE_TOKEN = import.meta.env.VITE_STRIVE_API_TOKEN;
+  const COMMENTS_URL = "https://striveschool-api.herokuapp.com/api/comments/";
 
   useEffect(() => {
     const fetchMovies = async () => {
@@ -55,34 +57,54 @@ const MovieGallery = ({ searchQuery, viewMode }) => {
     }));
   };
 
-  const fetchComments = (movieId) => {
-    const storedComments = localStorage.getItem(`comments_${movieId}`);
-    if (storedComments) {
-      setComments(JSON.parse(storedComments));
-    } else {
+  const fetchComments = async (movieId) => {
+    try {
+      const response = await fetch(`${COMMENTS_URL}${movieId}`, {
+        headers: {
+          'Authorization': `Bearer ${STRIVE_TOKEN}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setComments(data);
+      } else {
+        setComments([]);
+      }
+    } catch (error) {
       setComments([]);
     }
   };
 
-  const handleCommentSubmit = (e) => {
+  const handleCommentSubmit = async (e) => {
     e.preventDefault();
     if (!newComment.trim()) return;
 
     const newCommentObj = {
-      _id: Date.now().toString(),
       comment: newComment,
-      rate: commentRating,
+      rate: parseInt(commentRating),
       elementId: selectedMovie.imdbID,
-      date: new Date().toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' })
     };
 
-    const updatedComments = [...comments, newCommentObj];
-    setComments(updatedComments);
-    localStorage.setItem(`comments_${selectedMovie.imdbID}`, JSON.stringify(updatedComments));
-    
-    setNewComment('');
-    setCommentRating('5');
-    setShowModal(false);
+    try {
+      const response = await fetch(COMMENTS_URL, {
+        method: 'POST',
+        body: JSON.stringify(newCommentObj),
+        headers: {
+          'Authorization': `Bearer ${STRIVE_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        setNewComment('');
+        setCommentRating('5');
+        fetchComments(selectedMovie.imdbID);
+      } else {
+        alert("Errore nell'invio del commento");
+      }
+    } catch (error) {
+      console.error("Errore:", error);
+    }
   };
 
   const handleCardClick = (movie) => {
@@ -126,9 +148,7 @@ const MovieGallery = ({ searchQuery, viewMode }) => {
           style={viewMode === 'carousel' ? { scrollBehavior: 'smooth' } : {}}
         >
           {movies.map((movie) => {
-            if (brokenImages[movie.imdbID]) {
-              return null;
-            }
+            if (brokenImages[movie.imdbID]) return null;
 
             return (
               <Col 
@@ -141,10 +161,7 @@ const MovieGallery = ({ searchQuery, viewMode }) => {
                     src={movie.Poster}
                     alt={movie.Title}
                     className="img-fluid w-100 h-100 object-fit-cover"
-                    style={{ 
-                      cursor: 'pointer',
-                      transition: 'transform 0.3s ease'
-                    }}
+                    style={{ cursor: 'pointer', transition: 'transform 0.3s ease' }}
                     onMouseEnter={(e) => e.target.style.transform = 'scale(1.08)'}
                     onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
                     onClick={() => handleCardClick(movie)}
@@ -158,20 +175,10 @@ const MovieGallery = ({ searchQuery, viewMode }) => {
       )}
 
       <style>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          height: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #111;
-          border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #333;
-          border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #555;
-        }
+        .custom-scrollbar::-webkit-scrollbar { height: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #111; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #555; }
       `}</style>
 
       <Modal show={showModal} onHide={() => setShowModal(false)} centered data-bs-theme="dark">
@@ -186,7 +193,7 @@ const MovieGallery = ({ searchQuery, viewMode }) => {
             {comments.length === 0 ? (
               <div className="text-center py-4 text-muted border border-secondary border-dashed rounded bg-opacity-10 bg-secondary">
                 <i className="bi bi-chat-left-text d-block fs-3 mb-2"></i>
-                Nessuna recensione presente per questo titolo. Lascia la prima!
+                Nessuna recensione presente per questo titolo.
               </div>
             ) : (
               comments.map((c) => (
@@ -204,7 +211,6 @@ const MovieGallery = ({ searchQuery, viewMode }) => {
                         <i key={`empty-${i}`} className="bi bi-star text-muted me-1" style={{ fontSize: '0.85rem' }}></i>
                       ))}
                     </div>
-                    <small className="text-muted" style={{ fontSize: '0.75rem' }}>{c.date || 'Oggi'}</small>
                   </div>
                   <p className="mb-0 text-white-50" style={{ fontSize: '0.9rem', lineHeight: '1.4' }}>
                     {c.comment}
