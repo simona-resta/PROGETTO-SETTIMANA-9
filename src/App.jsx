@@ -5,11 +5,12 @@ import MyFooter from './components/Footer';
 
 function App() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState("carousel");
 
   return (
     <>
-      <MyNavbar setSearchQuery={setSearchQuery} />
-      <TvShows searchQuery={searchQuery} />
+      <MyNavbar setSearchQuery={setSearchQuery} viewMode={viewMode} setViewMode={setViewMode} />
+      <TvShows searchQuery={searchQuery} viewMode={viewMode} />
       <MyFooter />
     </>
   );

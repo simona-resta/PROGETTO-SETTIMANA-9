@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Row, Col, Spinner, Alert, Modal, Button, Form, ListGroup, Dropdown } from 'react-bootstrap';
+import { Row, Col, Spinner, Alert, Modal, Button, Form, Dropdown } from 'react-bootstrap';
 
-const MovieGallery = ({ searchQuery }) => {
+const MovieGallery = ({ searchQuery, viewMode }) => { 
   const [movies, setMovies] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
@@ -11,6 +11,8 @@ const MovieGallery = ({ searchQuery }) => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [commentRating, setCommentRating] = useState('5');
+  
+  const [brokenImages, setBrokenImages] = useState({});
 
   const API_KEY = import.meta.env.VITE_OMDB_API_KEY;
 
@@ -19,12 +21,20 @@ const MovieGallery = ({ searchQuery }) => {
       try {
         setIsLoading(true);
         setIsError(false);
-        const response = await fetch(`http://www.omdbapi.com/?apikey=${API_KEY}&s=${searchQuery}`);
+        setBrokenImages({});
+        
+        const response = await fetch(`https://www.omdbapi.com/?apikey=${API_KEY}&s=${searchQuery}`);
         if (!response.ok) throw new Error('Errore nella fetch');
 
         const data = await response.json();
         if (data.Response === "True") {
-          setMovies(data.Search);
+          const validMovies = data.Search.filter(movie => 
+            movie.Poster && 
+            movie.Poster.trim() !== "" && 
+            movie.Poster !== "N/A" &&
+            movie.Poster.startsWith('http')
+          );
+          setMovies(validMovies); 
         } else {
           setIsError(true);
         }
@@ -37,6 +47,13 @@ const MovieGallery = ({ searchQuery }) => {
 
     fetchMovies();
   }, [searchQuery]);
+
+  const handleImageError = (movieId) => {
+    setBrokenImages(prev => ({
+      ...prev,
+      [movieId]: true
+    }));
+  };
 
   const fetchComments = (movieId) => {
     const storedComments = localStorage.getItem(`comments_${movieId}`);
@@ -87,7 +104,9 @@ const MovieGallery = ({ searchQuery }) => {
 
   return (
     <div className="mb-5">
-      <h4 className="text-white mb-3 text-capitalize">{searchQuery}</h4>
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h4 className="text-white mb-0 text-capitalize">{searchQuery}</h4>
+      </div>
 
       {isLoading && (
         <div className="text-center">
@@ -102,27 +121,58 @@ const MovieGallery = ({ searchQuery }) => {
       )}
 
       {!isLoading && !isError && (
-        <Row className="g-3">
-          {movies.slice(0, 6).map((movie) => (
-            <Col xs={12} sm={6} md={4} lg={2} key={movie.imdbID}>
-              <div className="overflow-hidden rounded" style={{ height: '300px' }}>
-                <img
-                  src={movie.Poster}
-                  alt={movie.Title}
-                  className="img-fluid w-100 h-100 object-fit-cover"
-                  style={{ 
-                    cursor: 'pointer',
-                    transition: 'transform 0.3s ease'
-                  }}
-                  onMouseEnter={(e) => e.target.style.transform = 'scale(1.08)'}
-                  onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
-                  onClick={() => handleCardClick(movie)}
-                />
-              </div>
-            </Col>
-          ))}
+        <Row 
+          className={`g-3 ${viewMode === 'carousel' ? 'flex-nowrap overflow-auto pb-3 custom-scrollbar' : ''}`}
+          style={viewMode === 'carousel' ? { scrollBehavior: 'smooth' } : {}}
+        >
+          {movies.map((movie) => {
+            if (brokenImages[movie.imdbID]) {
+              return null;
+            }
+
+            return (
+              <Col 
+                key={movie.imdbID}
+                xs={6} sm={4} md={3} lg={2} 
+                className={viewMode === 'carousel' ? 'flex-shrink-0' : 'mb-2'}
+              >
+                <div className="overflow-hidden rounded animate-card" style={{ height: '300px' }}>
+                  <img
+                    src={movie.Poster}
+                    alt={movie.Title}
+                    className="img-fluid w-100 h-100 object-fit-cover"
+                    style={{ 
+                      cursor: 'pointer',
+                      transition: 'transform 0.3s ease'
+                    }}
+                    onMouseEnter={(e) => e.target.style.transform = 'scale(1.08)'}
+                    onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                    onClick={() => handleCardClick(movie)}
+                    onError={() => handleImageError(movie.imdbID)}
+                  />
+                </div>
+              </Col>
+            );
+          })}
         </Row>
       )}
+
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          height: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #111;
+          border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #333;
+          border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #555;
+        }
+      `}</style>
 
       <Modal show={showModal} onHide={() => setShowModal(false)} centered data-bs-theme="dark">
         <Modal.Header closeButton className="bg-dark text-white border-secondary">

@@ -22,10 +22,61 @@ body {
   color: #808080 !important;
 }
 
-.site-footer i {
-  font-size: 1.5rem;
+.footer-link {
+  color: #808080;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.footer-link:hover {
   color: #ffffff !important;
+  text-decoration: underline !important;
   cursor: pointer;
+}
+
+.social-icon {
+  color: #808080 !important;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1.5rem;
+}
+
+.social-icon:hover {
+  color: #ffffff !important;
+  transform: scale(1.2);
+}
+
+
+.brand-effect {
+  transition: transform 0.2s ease-out;
+  display: inline-block;
+}
+
+.brand-effect:hover {
+  transform: translateY(-3px) scale(1.05);
+}
+
+.nav-icon-effect {
+  transition: all 0.2s ease-out;
+  color: #ffffff !important;
+  display: inline-block;
+}
+
+.nav-icon-effect:hover {
+  transform: translateY(-3px) scale(1.1);
+  color: #e50914 !important;
+}
+
+.search-input {
+  transition: all 0.3s ease;
+  border: 1px solid #6c757d;
+}
+
+.search-input:hover, 
+.search-input:focus {
+  border-color: #ffffff !important;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+  outline: none;
 }
 
 .movie-card {
@@ -34,9 +85,11 @@ body {
   border-radius: 4px;
 }
 
-.movie-card:hover {
-  transform: scale(1.1); 
-  box-shadow: 0 10px 20px rgba(0,0,0,0.5); 
-  z-index: 10;
+@media (hover: hover) {
+  .movie-card:hover {
+    transform: scale(1.08); 
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5); 
+    z-index: 10;
+  }
 }
 

@@ -1,11 +1,19 @@
+import { useState } from 'react';
 import MovieGallery from './MovieGallery';
 
-const TvShows = ({ searchQuery }) => {
-  const isDefaultView = 
-    !searchQuery || 
-    searchQuery === "Harry Potter" || 
-    searchQuery === "Lord of the Rings" || 
-    searchQuery === "Star Wars";
+const TvShows = ({ searchQuery, viewMode }) => {
+  const [selectedGenre, setSelectedGenre] = useState("Genres");
+
+  const genreConfig = {
+    Genres: ["Harry Potter", "Lord of the Rings", "Star Wars"],
+    Action: ["Marvel", "John Wick", "Fast and Furious"],
+    Drama: ["The Godfather", "Breaking Bad", "Chernobyl"],
+    Comedy: ["Friends", "The Office", "Shrek"],
+    SciFi: ["Matrix", "Interstellar", "Stranger Things"]
+  };
+
+  const isDefaultView = !searchQuery || searchQuery.trim() === "";
+  const currentQueries = genreConfig[selectedGenre] || genreConfig["Genres"];
 
   return (
     <div className="container-fluid px-4 mt-4">
@@ -15,29 +23,27 @@ const TvShows = ({ searchQuery }) => {
           <select 
             className="bg-black text-white border border-secondary px-2 py-1" 
             style={{ cursor: 'pointer', outline: 'none' }}
-            defaultValue="Genres"
+            value={isDefaultView ? selectedGenre : "Genres"} 
+            onChange={(e) => setSelectedGenre(e.target.value)}
+            disabled={!isDefaultView} 
           >
-            <option disabled>Genres</option>
-            <option>Action</option>
-            <option>Drama</option>
-            <option>Comedy</option>
-            <option>Sci-Fi</option>
+            <option value="Genres">All Genres</option>
+            <option value="Action">Action</option>
+            <option value="Drama">Drama</option>
+            <option value="Comedy">Comedy</option>
+            <option value="SciFi">Sci-Fi</option>
           </select>
-        </div>
-        <div className="text-white fs-5 d-none d-md-block">
-          <i className="bi bi-grid border border-secondary px-2 py-1 me-2" style={{ cursor: 'pointer' }}></i>
-          <i className="bi bi-list border border-secondary px-2 py-1" style={{ cursor: 'pointer' }}></i>
         </div>
       </div>
 
       {isDefaultView ? (
         <>
-          <MovieGallery searchQuery="Harry Potter" />
-          <MovieGallery searchQuery="Lord of the Rings" />
-          <MovieGallery searchQuery="Star Wars" />
+          {currentQueries.map((query) => (
+            <MovieGallery key={query} searchQuery={query} viewMode={viewMode} />
+          ))}
         </>
       ) : (
-        <MovieGallery searchQuery={searchQuery} />
+        <MovieGallery searchQuery={searchQuery} viewMode={viewMode} />
       )}
     </div>
   );
