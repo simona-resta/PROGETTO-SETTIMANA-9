@@ -4,14 +4,12 @@ import TvShows from './components/TvShows';
 import MyFooter from './components/Footer';
 
 function App() {
-  const [searchQuery, setSearchQuery] = useState("Harry Potter");
+  const [searchQuery, setSearchQuery] = useState("");
 
   return (
     <>
       <MyNavbar setSearchQuery={setSearchQuery} />
-      
       <TvShows searchQuery={searchQuery} />
-      
       <MyFooter />
     </>
   );
